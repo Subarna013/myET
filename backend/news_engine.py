@@ -2,6 +2,7 @@ import requests
 import streamlit as st
 from config import NEWS_API_KEY
 
+
 @st.cache_data(ttl=300)
 def fetch_news(query):
 
@@ -14,7 +15,7 @@ def fetch_news(query):
         "q": query,
         "language": "en",
         "sortBy": "publishedAt",
-        "pageSize": 20,
+        "pageSize": 30,
         "apiKey": NEWS_API_KEY
     }
 
@@ -29,12 +30,17 @@ def fetch_news(query):
         articles = []
 
         for a in data.get("articles", []):
-            if not a.get("title"):
+
+            title = a.get("title")
+            desc = a.get("description")
+
+            # skip weak articles
+            if not title or len(title) < 20:
                 continue
 
             articles.append({
-                "title": a["title"],
-                "description": a.get("description"),
+                "title": title,
+                "description": desc,
                 "url": a["url"]
             })
 
