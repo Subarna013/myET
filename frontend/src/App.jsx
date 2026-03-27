@@ -1,6 +1,7 @@
+import React from "react";
 import { useState, useEffect } from "react";
-import Login from "./Login";
-import NewsFeed from "./NewsFeed";
+import Login from "./Login.jsx";
+import NewsFeed from "./NewsFeed.jsx";
 
 function App() {
 

@@ -2,10 +2,19 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 import models, schemas
+from recommender import get_personalized_feed
+from fastapi.middleware.cors import CORSMiddleware
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # allow all for now
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def get_db():
@@ -15,6 +24,24 @@ def get_db():
     finally:
         db.close()
 
+
+# -----------------------------
+# GET FEED
+# -----------------------------
+@app.get("/feed/{user_id}")
+def get_feed(user_id: int, db: Session = Depends(get_db)):
+
+    # get user interests
+    interests = db.query(models.Interest).filter(
+        models.Interest.user_id == user_id
+    ).all()
+
+    topics = [i.topic for i in interests]
+
+    # get personalized news
+    articles = get_personalized_feed(topics)
+
+    return {"articles": articles}
 
 # -----------------------------
 # SIGNUP

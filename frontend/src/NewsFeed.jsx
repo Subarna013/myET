@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useState } from "react";
 import { getFeed } from "./api";
 
@@ -14,9 +15,10 @@ function NewsFeed({ user, logout }) {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError("");
 
         const res = await getFeed(user);
-        setArticles(res.articles);
+        setArticles(res.articles || []);
 
       } catch (err) {
         setError(err.message);
@@ -42,9 +44,19 @@ function NewsFeed({ user, logout }) {
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {articles.map((article, index) => (
-        <div key={index} style={{ borderBottom: "1px solid #ccc", padding: "10px" }}>
+      {!loading && articles.length === 0 && (
+        <p>No news available. Try again later.</p>
+      )}
 
+      {articles.map((article, index) => (
+        <div
+          key={index}
+          style={{
+            borderBottom: "1px solid #ccc",
+            padding: "10px",
+            marginBottom: "10px"
+          }}
+        >
           <h3>{article.title}</h3>
 
           <p>{article.description}</p>
@@ -52,7 +64,6 @@ function NewsFeed({ user, logout }) {
           <a href={article.url} target="_blank" rel="noreferrer">
             Read full article →
           </a>
-
         </div>
       ))}
 

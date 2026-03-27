@@ -1,9 +1,10 @@
+import React from "react";
 import { useState } from "react";
 import { signup, login } from "./api";
 
 function Login({ setUser }) {
 
-  const [mode, setMode] = useState("login"); // login / signup
+  const [mode, setMode] = useState("login");
 
   const [form, setForm] = useState({
     name: "",
