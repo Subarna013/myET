@@ -29,33 +29,71 @@ def score_article(article, interests):
 
 
 # -----------------------------
-# BUILD FEED (SAFE + FALLBACK)
+# BUILD FEED (FINAL FIXED)
 # -----------------------------
 def get_personalized_feed(interests):
 
-    # fallback interests
-    if not interests:
-        interests = ["business", "economy"]
+    try:
+        # fallback interests
+        if not interests:
+            interests = ["business", "economy"]
 
-    # fetch news
-    articles = fetch_news(interests + ["business"])
+        # fetch news
+        articles = fetch_news(interests + ["business"])
 
-    # 🔥 fallback if API fails
-    if not articles:
+        # 🔥 HARD FALLBACK (NEVER EMPTY)
+        if not articles:
+            return [
+                {
+                    "title": "⚠️ No live news fetched",
+                    "description": "Check API / backend. Showing fallback.",
+                    "url": "#"
+                },
+                {
+                    "title": "System working but no articles returned",
+                    "description": "Your news source might be empty or blocked.",
+                    "url": "#"
+                }
+            ]
+
+        # score safely
+        scored_articles = []
+        for a in articles:
+            try:
+                score = score_article(a, interests)
+                scored_articles.append((a, score))
+            except:
+                continue
+
+        # 🔥 if scoring fails
+        if not scored_articles:
+            return articles[:5]
+
+        # sort
+        scored_articles.sort(key=lambda x: x[1], reverse=True)
+
+        # diversity mix
+        top = scored_articles[:7]
+        mid = scored_articles[7:15]
+
+        final = top + mid[:3]
+
+        result = [a[0] for a in final[:10]]
+
+        # 🔥 FINAL SAFETY
+        if not result:
+            return articles[:5]
+
+        return result
+
+    except Exception as e:
+        print("RECOMMENDER ERROR:", str(e))
+
+        # 🔥 ULTIMATE FALLBACK
         return [
-            {"title": "No live news. Showing fallback.", "description": "", "url": "#"},
-            {"title": "Try again later for latest updates.", "description": "", "url": "#"}
+            {
+                "title": "⚠️ System error in recommender",
+                "description": str(e),
+                "url": "#"
+            }
         ]
-
-    # score articles
-    scored_articles = [(a, score_article(a, interests)) for a in articles]
-
-    scored_articles.sort(key=lambda x: x[1], reverse=True)
-
-    # diversity mix
-    top = scored_articles[:7]
-    mid = scored_articles[7:15]
-
-    final = top + mid[:3]
-
-    return [a[0] for a in final[:10]]
