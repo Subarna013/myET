@@ -18,16 +18,13 @@ def fetch_news(query):
     if isinstance(query, list):
         query = " OR ".join(query)
 
-    url = "https://newsapi.org/v2/everything"
+    url = "https://newsapi.org/v2/top-headlines"
 
     params = {
-        "q": query,
-        "language": "en",
-        "sortBy": "publishedAt",
-        "pageSize": 20,
-        "apiKey": NEWS_API_KEY
+    "country": "us",
+    "category": "business",
+    "apiKey": NEWS_API_KEY
     }
-
     try:
         response = requests.get(url, params=params, timeout=5)
 
