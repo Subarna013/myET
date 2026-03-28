@@ -1,6 +1,7 @@
 import requests
 import xml.etree.ElementTree as ET
 
+
 def fetch_news(query):
 
     try:
@@ -20,14 +21,18 @@ def fetch_news(query):
 
         articles = []
 
-        for item in root.findall(".//item")[:10]:
+        for item in root.findall(".//item"):
+            title = item.find("title").text
+            link = item.find("link").text
+            desc = item.find("description").text
+
             articles.append({
-                "title": item.find("title").text,
-                "description": item.find("description").text,
-                "url": item.find("link").text
+                "title": title,
+                "description": desc,
+                "url": link
             })
 
-        return articles
+        return articles[:10]
 
     except Exception as e:
         print("RSS ERROR:", str(e))
