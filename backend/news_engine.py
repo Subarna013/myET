@@ -1,14 +1,18 @@
 import requests
 import os
 
-# get API key from environment (Render)
+# get API key from environment
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
-
 
 def fetch_news(query):
     """
-    Fetch news articles from NewsAPI based on query/interests
+    Fetch news articles from NewsAPI
     """
+
+    # 🔥 SAFETY: check API key
+    if not NEWS_API_KEY:
+        print("ERROR: NEWS_API_KEY not set")
+        return []
 
     # convert list → query string
     if isinstance(query, list):
@@ -20,14 +24,13 @@ def fetch_news(query):
         "q": query,
         "language": "en",
         "sortBy": "publishedAt",
-        "pageSize": 30,
+        "pageSize": 20,
         "apiKey": NEWS_API_KEY
     }
 
     try:
         response = requests.get(url, params=params, timeout=5)
 
-        # API error handling
         if response.status_code != 200:
             print("News API error:", response.text)
             return []
@@ -37,12 +40,10 @@ def fetch_news(query):
         articles = []
 
         for a in data.get("articles", []):
-
             title = a.get("title")
             desc = a.get("description")
 
-            # skip weak / low-quality articles
-            if not title or len(title) < 20:
+            if not title:
                 continue
 
             articles.append({
@@ -51,7 +52,7 @@ def fetch_news(query):
                 "url": a.get("url")
             })
 
-        return articles[:20]
+        return articles
 
     except Exception as e:
         print("Error fetching news:", str(e))
