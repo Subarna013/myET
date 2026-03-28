@@ -1,35 +1,31 @@
 import requests
 import os
 
-# get API key from environment
-NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+GNEWS_API_KEY = os.getenv("GNEWS_API_KEY")
 
 def fetch_news(query):
-    """
-    Fetch news articles from NewsAPI
-    """
 
-    # 🔥 SAFETY: check API key
-    if not NEWS_API_KEY:
-        print("ERROR: NEWS_API_KEY not set")
+    if not GNEWS_API_KEY:
+        print("NO GNEWS API KEY")
         return []
 
-    # convert list → query string
-    if isinstance(query, list):
-        query = " OR ".join(query)
-
-    url = "https://newsapi.org/v2/top-headlines"
-
-    params = {
-    "country": "us",
-    "category": "business",
-    "apiKey": NEWS_API_KEY
-    }
     try:
-        response = requests.get(url, params=params, timeout=5)
+        if isinstance(query, list):
+            query = " OR ".join(query)
+
+        url = "https://gnews.io/api/v4/search"
+
+        params = {
+            "q": query,
+            "lang": "en",
+            "max": 10,
+            "token": GNEWS_API_KEY
+        }
+
+        response = requests.get(url, params=params)
 
         if response.status_code != 200:
-            print("News API error:", response.text)
+            print("GNews error:", response.text)
             return []
 
         data = response.json()
@@ -37,20 +33,14 @@ def fetch_news(query):
         articles = []
 
         for a in data.get("articles", []):
-            title = a.get("title")
-            desc = a.get("description")
-
-            if not title:
-                continue
-
             articles.append({
-                "title": title,
-                "description": desc,
+                "title": a.get("title"),
+                "description": a.get("description"),
                 "url": a.get("url")
             })
 
         return articles
 
     except Exception as e:
-        print("Error fetching news:", str(e))
+        print("Error:", e)
         return []
