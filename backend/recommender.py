@@ -2,16 +2,15 @@ from news_engine import fetch_news
 
 
 # -----------------------------
-# SCORE ARTICLE
+# SCORE ARTICLE (SAFE)
 # -----------------------------
 def score_article(article, interests):
 
-    title = article["title"].lower()
+    title = (article.get("title") or "").lower()
     description = (article.get("description") or "").lower()
 
     score = 0
 
-    # normalize interests
     interests = [i.lower() for i in interests]
 
     for t in interests:
@@ -20,7 +19,6 @@ def score_article(article, interests):
         if t in description:
             score += 2
 
-    # important keywords boost
     keywords = ["market", "funding", "growth", "policy", "stock", "startup"]
 
     for k in keywords:
@@ -31,24 +29,30 @@ def score_article(article, interests):
 
 
 # -----------------------------
-# BUILD FEED (WITH DIVERSITY)
+# BUILD FEED (SAFE + FALLBACK)
 # -----------------------------
 def get_personalized_feed(interests):
 
+    # fallback interests
     if not interests:
         interests = ["business", "economy"]
 
+    # fetch news
     articles = fetch_news(interests + ["business"])
 
+    # 🔥 fallback if API fails
     if not articles:
-        return []
+        return [
+            {"title": "No live news. Showing fallback.", "description": "", "url": "#"},
+            {"title": "Try again later for latest updates.", "description": "", "url": "#"}
+        ]
 
+    # score articles
     scored_articles = [(a, score_article(a, interests)) for a in articles]
 
-    # sort by score
     scored_articles.sort(key=lambda x: x[1], reverse=True)
 
-    # 🔥 diversity: mix top + mid
+    # diversity mix
     top = scored_articles[:7]
     mid = scored_articles[7:15]
 
