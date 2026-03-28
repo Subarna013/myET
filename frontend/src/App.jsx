@@ -1,5 +1,4 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Login from "./Login.jsx";
 import NewsFeed from "./NewsFeed.jsx";
 
@@ -12,8 +11,9 @@ function App() {
   // -----------------------------
   useEffect(() => {
     const savedUser = localStorage.getItem("user_id");
-    if (savedUser) {
-      setUser(savedUser);
+
+    if (savedUser && savedUser !== "undefined" && savedUser !== "null") {
+      setUser(Number(savedUser)); // 🔥 ensure it's a number
     }
   }, []);
 
@@ -21,8 +21,10 @@ function App() {
   // HANDLE LOGIN
   // -----------------------------
   const handleSetUser = (userId) => {
-    setUser(userId);
-    localStorage.setItem("user_id", userId);
+    const id = Number(userId); // 🔥 ensure number
+
+    setUser(id);
+    localStorage.setItem("user_id", id);
   };
 
   // -----------------------------
