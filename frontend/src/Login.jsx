@@ -1,5 +1,4 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { signup, login } from "./api";
 
 function Login({ setUser }) {
@@ -32,9 +31,14 @@ function Login({ setUser }) {
       setLoading(true);
       setError("");
 
+      // ✅ SAFE SPLIT (handles empty input also)
+      const interestsArray = form.interests
+        ? form.interests.split(",").map(i => i.trim())
+        : [];
+
       const res = await signup({
         ...form,
-        interests: form.interests.split(",").map(i => i.trim())
+        interests: interestsArray
       });
 
       setUser(res.user_id);
@@ -82,24 +86,30 @@ function Login({ setUser }) {
       {mode === "signup" && (
         <input
           placeholder="Name"
+          value={form.name}
           onChange={e => handleChange("name", e.target.value)}
         />
       )}
 
       <input
         placeholder="Phone"
+        value={form.phone}
         onChange={e => handleChange("phone", e.target.value)}
       />
 
       <input
         type="password"
         placeholder="Password"
+        value={form.password}
         onChange={e => handleChange("password", e.target.value)}
       />
 
       {mode === "signup" && (
         <>
-          <select onChange={e => handleChange("persona", e.target.value)}>
+          <select
+            value={form.persona}
+            onChange={e => handleChange("persona", e.target.value)}
+          >
             <option>Student</option>
             <option>Startup Founder</option>
             <option>Investor</option>
@@ -108,6 +118,7 @@ function Login({ setUser }) {
 
           <input
             placeholder="Interests (comma separated)"
+            value={form.interests}
             onChange={e => handleChange("interests", e.target.value)}
           />
         </>
