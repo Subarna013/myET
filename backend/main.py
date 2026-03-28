@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from database import SessionLocal, engine
 import models, schemas
 from recommender import get_personalized_feed
@@ -15,10 +16,12 @@ models.Base.metadata.create_all(bind=engine)
 # -----------------------------
 app = FastAPI()
 
-# ✅ CORS (VERY IMPORTANT)
+# -----------------------------
+# CORS (IMPORTANT)
+# -----------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # allow all (can restrict later)
+    allow_origins=["*"],  # you can restrict later
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,30 +39,40 @@ def get_db():
 
 
 # -----------------------------
-# GET FEED
+# GET FEED (🔥 FIXED)
 # -----------------------------
 @app.get("/feed/{user_id}")
 def get_feed(user_id: int, db: Session = Depends(get_db)):
+    try:
+        interests = db.query(models.Interest).filter(
+            models.Interest.user_id == user_id
+        ).all()
 
-    interests = db.query(models.Interest).filter(
-        models.Interest.user_id == user_id
-    ).all()
+        topics = [i.topic for i in interests]
 
-    topics = [i.topic for i in interests]
+        # ✅ if no interests → return empty
+        if not topics:
+            return {"articles": []}
 
-    articles = get_personalized_feed(topics)
+        articles = get_personalized_feed(topics)
 
-    return {"articles": articles}
+        # ✅ fallback if recommender fails
+        if not articles:
+            return {"articles": []}
+
+        return {"articles": articles}
+
+    except Exception as e:
+        print("FEED ERROR:", str(e))  # check in Render logs
+        return {"articles": []}
 
 
 # -----------------------------
-# SIGNUP (FIXED)
+# SIGNUP (🔥 IMPROVED)
 # -----------------------------
 @app.post("/signup")
 def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
-
     try:
-        # create user
         new_user = models.User(
             name=user.name,
             phone=user.phone,
@@ -74,7 +87,7 @@ def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
         # ✅ SAFE INTEREST INSERT
         if user.interests:
             for i in user.interests:
-                if i and isinstance(i, str):  # avoid empty / bad values
+                if i and isinstance(i, str):
                     db.add(models.Interest(
                         user_id=new_user.id,
                         topic=i.lower().strip()
@@ -83,6 +96,10 @@ def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
         db.commit()
 
         return {"user_id": new_user.id}
+
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Phone already registered")
 
     except Exception as e:
         db.rollback()
@@ -94,7 +111,6 @@ def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
 # -----------------------------
 @app.post("/login")
 def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
-
     db_user = db.query(models.User).filter(
         models.User.phone == user.phone,
         models.User.password == user.password
