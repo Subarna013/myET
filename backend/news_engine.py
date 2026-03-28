@@ -1,46 +1,34 @@
 import requests
-import os
-
-GNEWS_API_KEY = os.getenv("GNEWS_API_KEY")
+import xml.etree.ElementTree as ET
 
 def fetch_news(query):
 
-    if not GNEWS_API_KEY:
-        print("NO GNEWS API KEY")
-        return []
-
     try:
+        # convert list → string
         if isinstance(query, list):
-            query = " OR ".join(query)
+            query = " ".join(query)
 
-        url = "https://gnews.io/api/v4/search"
+        url = f"https://news.google.com/rss/search?q={query}&hl=en-IN&gl=IN&ceid=IN:en"
 
-        params = {
-            "q": query,
-            "lang": "en",
-            "max": 10,
-            "token": GNEWS_API_KEY
-        }
-
-        response = requests.get(url, params=params)
+        response = requests.get(url, timeout=5)
 
         if response.status_code != 200:
-            print("GNews error:", response.text)
+            print("RSS error:", response.status_code)
             return []
 
-        data = response.json()
+        root = ET.fromstring(response.content)
 
         articles = []
 
-        for a in data.get("articles", []):
+        for item in root.findall(".//item")[:10]:
             articles.append({
-                "title": a.get("title"),
-                "description": a.get("description"),
-                "url": a.get("url")
+                "title": item.find("title").text,
+                "description": item.find("description").text,
+                "url": item.find("link").text
             })
 
         return articles
 
     except Exception as e:
-        print("Error:", e)
+        print("RSS ERROR:", str(e))
         return []
